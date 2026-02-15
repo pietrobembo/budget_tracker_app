@@ -201,12 +201,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 800 ? 4 : 2;
+        final isWide = constraints.maxWidth > 800;
+        final crossAxisCount = isWide ? 4 : 2;
         return GridView.count(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           crossAxisCount: crossAxisCount,
-          childAspectRatio: 2.2,
+          childAspectRatio: isWide ? 2.2 : 1.8,
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
           children: [
@@ -222,7 +223,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _kpiCard(String label, double value, Color color) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(16),
