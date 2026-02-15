@@ -8,7 +8,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Il mio Budget')),
+      appBar: AppBar(title: const Text('I miei Movimenti')),
       body: Column(
         children: [
           _buildBalanceCard(),
@@ -22,12 +22,11 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  // Card per il saldo totale
   Widget _buildBalanceCard() {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance.collection('transactions').snapshots(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData) return const CircularProgressIndicator();
+        if (!snapshot.hasData) return const LinearProgressIndicator();
         
         double total = 0;
         for (var doc in snapshot.data!.docs) {
@@ -37,7 +36,7 @@ class HomeScreen extends StatelessWidget {
 
         return Card(
           margin: const EdgeInsets.all(16),
-          color: Colors.teal.shade700,
+          color: Colors.teal,
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Column(
@@ -73,20 +72,16 @@ class TransactionList extends StatelessWidget {
           .orderBy('date', descending: true)
           .snapshots(),
       builder: (context, snapshot) {
-        if (snapshot.hasError) return const Text('Errore nel caricamento');
-        if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
 
         return ListView(
-          children: snapshot.data!.docs.map((DocumentSnapshot document) {
-            Map<String, dynamic> data = document.data()! as Map<String, dynamic>;
-            bool isIncome = data['type'] == 'Income';
-
+          children: snapshot.data!.docs.map((doc) {
+            bool isIncome = doc['type'] == 'Income';
             return ListTile(
-              leading: Icon(isIncome ? Icons.arrow_upward : Icons.arrow_downward, 
+              leading: Icon(isIncome ? Icons.add_circle : Icons.remove_circle, 
                             color: isIncome ? Colors.green : Colors.red),
-              title: Text(data['category']),
-              subtitle: Text(data['date'].toDate().toString().split(' ')[0]),
-              trailing: Text('€ ${data['amount']}', 
+              title: Text(doc['category']),
+              trailing: Text('€ ${doc['amount']}', 
                              style: TextStyle(fontWeight: FontWeight.bold, color: isIncome ? Colors.green : Colors.red)),
             );
           }).toList(),

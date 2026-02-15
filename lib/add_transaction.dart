@@ -10,49 +10,39 @@ class AddTransactionSheet extends StatefulWidget {
 
 class _AddTransactionSheetState extends State<AddTransactionSheet> {
   final _amountController = TextEditingController();
-  String _selectedType = 'Expense';
-  String _selectedCategory = 'Spesa';
+  String _type = 'Expense';
+  String _category = 'Cibo';
 
-  void _saveTransaction() {
+  void _save() {
     final amount = double.tryParse(_amountController.text) ?? 0;
     if (amount <= 0) return;
 
     FirebaseFirestore.instance.collection('transactions').add({
       'amount': amount,
-      'type': _selectedType,
-      'category': _selectedCategory,
+      'type': _type,
+      'category': _category,
       'date': DateTime.now(),
     });
-
     Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-        left: 20, right: 20, top: 20
-      ),
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom, left: 20, right: 20, top: 20),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          TextField(
-            controller: _amountController,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: 'Importo (€)'),
-          ),
+          TextField(controller: _amountController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Importo €')),
           DropdownButton<String>(
-            value: _selectedType,
+            value: _type,
             isExpanded: true,
             items: ['Income', 'Expense'].map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
-            onChanged: (val) => setState(() => _selectedType = val!),
+            onChanged: (v) => setState(() => _type = v!),
           ),
+          TextField(onChanged: (v) => _category = v, decoration: const InputDecoration(labelText: 'Categoria (es. Cibo, Affitto)')),
           const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: _saveTransaction,
-            child: const Text('Salva Transazione'),
-          ),
+          ElevatedButton(onPressed: _save, child: const Text('Salva')),
           const SizedBox(height: 20),
         ],
       ),
