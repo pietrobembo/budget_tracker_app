@@ -54,13 +54,10 @@ class TransactionService {
     } else {
       date = DateTime.now();
     }
-    String type = data['type'] as String? ?? 'Expenses';
-    // Normalize: old data may use 'Expense' (singular)
-    if (type == 'Expense') type = 'Expenses';
     return {
       'id': doc.id,
       'date': date,
-      'type': type,
+      'type': data['type'] ?? 'Expenses',
       'category': data['category'] ?? 'Uncategorized',
       'amount': (data['amount'] as num?)?.toDouble() ?? 0.0,
       'details': data['details'] ?? '',
