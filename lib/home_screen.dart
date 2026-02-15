@@ -566,6 +566,7 @@ class _HomeScreenState extends State<HomeScreen> {
               color: Colors.red.withValues(alpha: 0.3),
               child: const Icon(Icons.delete, color: Colors.white),
             ),
+            confirmDismiss: (_) => _confirmDelete(context, tx),
             onDismissed: (_) => TransactionService.deleteTransaction(tx['id']),
             child: ListTile(
               leading: CircleAvatar(
@@ -575,9 +576,24 @@ class _HomeScreenState extends State<HomeScreen> {
               title: Text(tx['category'] as String, style: const TextStyle(color: Color(0xFFE2E8F0), fontWeight: FontWeight.w500)),
               subtitle: Text('$date${tx['details'] != '' ? ' · ${tx['details']}' : ''}',
                 style: const TextStyle(color: Color(0xFFA0AEC0), fontSize: 12)),
-              trailing: Text(
-                '€ ${NumberFormat('#,##0.00').format(tx['amount'])}',
-                style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 15),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '€ ${NumberFormat('#,##0.00').format(tx['amount'])}',
+                    style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 15),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () async {
+                      final confirmed = await _confirmDelete(context, tx);
+                      if (confirmed) {
+                        TransactionService.deleteTransaction(tx['id']);
+                      }
+                    },
+                    child: Icon(Icons.delete_outline, color: Colors.white.withValues(alpha: 0.3), size: 20),
+                  ),
+                ],
               ),
             ),
           );
@@ -602,6 +618,33 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: child,
     );
+  }
+
+  Future<bool> _confirmDelete(BuildContext context, Map<String, dynamic> tx) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A2E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('🗑️ Elimina Transazione', style: TextStyle(color: Color(0xFFE2E8F0))),
+        content: Text(
+          'Vuoi eliminare "${tx['category']}" — € ${NumberFormat('#,##0.00').format(tx['amount'])}?',
+          style: const TextStyle(color: Color(0xFFA0AEC0)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Annulla', style: TextStyle(color: Color(0xFFA0AEC0))),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: const Color(0xFFFC8181)),
+            child: const Text('Elimina'),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
   }
 
   void _showAddTransaction(BuildContext context) {

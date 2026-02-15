@@ -45,6 +45,16 @@ class TransactionService {
     return sorted;
   }
 
+  /// Normalize the type field to one of: Income, Expenses, Savings.
+  static String _normalizeType(String? raw) {
+    if (raw == null || raw.isEmpty) return 'Expenses';
+    final lower = raw.trim().toLowerCase();
+    if (lower == 'income') return 'Income';
+    if (lower == 'expense' || lower == 'expenses') return 'Expenses';
+    if (lower == 'saving' || lower == 'savings') return 'Savings';
+    return 'Expenses';
+  }
+
   /// Helper: parse a Firestore document into a Map with typed fields.
   static Map<String, dynamic> parseDoc(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>? ?? {};
@@ -57,7 +67,7 @@ class TransactionService {
     return {
       'id': doc.id,
       'date': date,
-      'type': data['type'] ?? 'Expenses',
+      'type': _normalizeType(data['type'] as String?),
       'category': data['category'] ?? 'Uncategorized',
       'amount': (data['amount'] as num?)?.toDouble() ?? 0.0,
       'details': data['details'] ?? '',
