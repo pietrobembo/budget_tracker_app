@@ -21,11 +21,48 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
   List<String> _categories = [];
   bool _loadingCategories = true;
   bool _saving = false;
+  List<Map<String, dynamic>> _suggestions = [];
+  bool _loadingSuggestions = true;
 
   @override
   void initState() {
     super.initState();
     _loadCategories();
+    _loadSuggestions();
+  }
+
+  Future<void> _loadSuggestions() async {
+    final suggestions = await TransactionService.getFrequentTransactions();
+    if (mounted) {
+      setState(() {
+        _suggestions = suggestions;
+        _loadingSuggestions = false;
+      });
+    }
+  }
+
+  void _applySuggestion(Map<String, dynamic> s) {
+    setState(() {
+      _type = s['type'] as String;
+      _amountController.text = (s['amount'] as double).toStringAsFixed(2);
+    });
+    // Reload categories for the new type, then select the right one
+    TransactionService.getCategoriesForType(_type).then((cats) {
+      if (mounted) {
+        setState(() {
+          _categories = cats;
+          final cat = s['category'] as String;
+          if (cats.contains(cat)) {
+            _category = cat;
+            _isNewCategory = false;
+          } else {
+            _isNewCategory = true;
+            _newCategoryController.text = cat;
+          }
+          _loadingCategories = false;
+        });
+      }
+    });
   }
 
   Future<void> _loadCategories() async {
@@ -133,6 +170,42 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
             // Title
             const Text('📝 New Transaction',
               style: TextStyle(color: Color(0xFFE2E8F0), fontSize: 22, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 16),
+
+            // Quick suggestions
+            if (!_loadingSuggestions && _suggestions.isNotEmpty) ...[
+              const Text('⚡ Suggerimenti rapidi',
+                style: TextStyle(color: Color(0xFFA0AEC0), fontSize: 13, fontWeight: FontWeight.w500)),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _suggestions.map((s) {
+                  final type = s['type'] as String;
+                  final color = type == 'Income'
+                      ? const Color(0xFF48BB78)
+                      : type == 'Savings'
+                          ? const Color(0xFF63B3ED)
+                          : const Color(0xFFFC8181);
+                  final icon = type == 'Income' ? '💵' : type == 'Savings' ? '🏦' : '🔻';
+                  return GestureDetector(
+                    onTap: () => _applySuggestion(s),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: color.withValues(alpha: 0.3)),
+                      ),
+                      child: Text(
+                        '$icon ${s['category']} · €${(s['amount'] as double).toStringAsFixed(2)}',
+                        style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
             const SizedBox(height: 24),
 
             // Date picker

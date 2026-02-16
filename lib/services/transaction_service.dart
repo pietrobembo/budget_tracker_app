@@ -73,4 +73,35 @@ class TransactionService {
       'details': data['details'] ?? '',
     };
   }
+
+  /// Get the most frequent transaction patterns (type + category + amount).
+  /// Returns up to [limit] suggestions sorted by frequency.
+  static Future<List<Map<String, dynamic>>> getFrequentTransactions({int limit = 6}) async {
+    final snapshot = await _collection.get();
+    final Map<String, Map<String, dynamic>> freq = {};
+
+    for (final doc in snapshot.docs) {
+      final data = doc.data();
+      final type = _normalizeType(data['type'] as String?);
+      final category = (data['category'] as String?) ?? '';
+      final amount = (data['amount'] as num?)?.toDouble() ?? 0.0;
+      if (category.isEmpty) continue;
+
+      final key = '$type|$category|${amount.toStringAsFixed(2)}';
+      if (freq.containsKey(key)) {
+        freq[key]!['count'] = (freq[key]!['count'] as int) + 1;
+      } else {
+        freq[key] = {
+          'type': type,
+          'category': category,
+          'amount': amount,
+          'count': 1,
+        };
+      }
+    }
+
+    final sorted = freq.values.toList()
+      ..sort((a, b) => (b['count'] as int).compareTo(a['count'] as int));
+    return sorted.take(limit).toList();
+  }
 }
